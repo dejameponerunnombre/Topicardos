@@ -9,6 +9,7 @@ void formatDate(char* date)
     char* end = date;
 //    char* aux ="0";
     goToEndOfString(end);
+    //falta la funcion de cambiar la fecha a tipo anio/mes/dia
     char *year = date;
     char *month = date;
     char *day = date;
@@ -31,6 +32,7 @@ void formatDate(char* date)
 //    }
 //}
 
+//calcula la cant de elementos
 int my_strlength(char *strg)
 {
     char*p=strg;
@@ -43,6 +45,7 @@ int my_strlength(char *strg)
     return length;
 };
 
+// actualente va a usar el \0 porque nose como es la parte de archivos
 void goToEndOfString(char *p)
 {
     while(*p != '\0')
@@ -51,6 +54,7 @@ void goToEndOfString(char *p)
     }
 }
 
+//desencripta solamente lo del primer archivo, se armo de esta forma para que sea generica y pueda usarse mayusculas y minusculas
 void desencriptar (char* strg)
 {
     int ce = my_strlength(strg);
@@ -88,6 +92,7 @@ void desencriptar (char* strg)
     }
 }
 
+//tengo entendido que funciona para los 2 archivos
 void normalizarTexto(char* strg)
 {
 
@@ -98,6 +103,7 @@ void normalizarTexto(char* strg)
     stringToReplace(strg,'_',' ', ce);
 }
 
+//armada generica para reutilizarse
 void stringToReplace(char* strg, char charToFind, char charToReplace,int ce)
 {
     char* p = strg;
