@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define ABECEDARIO
 
 void formatDate(char* date)
 {
@@ -13,23 +12,24 @@ void formatDate(char* date)
     char *year = date;
     char *month = date;
     char *day = date;
+    int ce = my_strlength(date);
 
-    myStrRplce(p,'/','-');
+    stringToReplace(p,'/','-',ce);
 
 }
 
-void myStrRplce(char * strgToReplace,char toFind, char toReplace)
-{
-    char *p = strgToReplace;
-    while(*p!='\0')
-    {
-        if(*p=='/')
-        {
-            *p='-';
-        }
-        p++;
-    }
-}
+//void myStrRplce(char * strgToReplace,char toFind, char toReplace)
+//{
+//    char *p = strgToReplace;
+//    while(*p!='\0')
+//    {
+//        if(*p=='/')
+//        {
+//            *p='-';
+//        }
+//        p++;
+//    }
+//}
 
 int my_strlength(char *strg)
 {
