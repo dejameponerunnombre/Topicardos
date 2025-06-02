@@ -1,4 +1,4 @@
-#include "tp.h"
+#include "funciones.h"
 
 void ReemplazoDeCaracter(char* strg, char charToFind, char charToReplace)
 {
@@ -38,6 +38,25 @@ double mi_atod(const char *c)
     return num*signo;
 }
 
+int mi_atoi(const char *c)
+{
+    int num = 0, signo = 1;
+
+    if(*c == '-')
+    {
+        signo  = -1;
+        c++;
+    }
+    else if(*c == '+')
+        c++;
+    while(*c)
+    {
+        num = num*10 + (*c - '0');
+        c++;
+    }
+    return num*signo;
+}
+
 int mi_strcmp(const char *s1,  const char *s2)
 {
     while(*s1!='\0' && *s2!='\0' && *s1==*s2)
@@ -73,11 +92,9 @@ char *mi_strchr(char *s, char *c)
     return aux;
 }
 
-void FormatoFecha (char* fechaV, char *fechaN)// PUNTO 1 CAMBIAR FORMATO FECHA
+void FormatoFecha (char* fechaV, Fecha *fechaN)// PUNTO 1 CAMBIAR FORMATO FECHA
 {
-    char dia[3], mes[3], anio[5];
-    sscanf(fechaV,"%2s/%2s/%4s", dia, mes, anio); // Descompongo el string original
-    sprintf(fechaN, "%s-%s-%s", anio, mes, dia); // Nuevo formato de fecha
+    sscanf(fechaV,"%d/%d/%d", &fechaN->d, &fechaN->m, &fechaN->a); // Descompongo el string original
 }
 
 double CambioFormatoIndice(char * indice)
@@ -165,65 +182,107 @@ void normalizarObras(char *texto)
     normalizarNivelGral(texto); // Llamo a la funcion para cambiar los restantes "_" en " " y dejar en mayuscula la primer letra
 }
 
-void FusionarArchivos(Archivo* ICC, Archivo* Obras, Archivo* Fusion, int *ce1, int *ce2, int* ce3)
+bool CrearVector(Vector *v, size_t tamElem, size_t cap)
 {
-    int i = 0, j = 0;
-    while(i < *ce1 || j < *ce2) //Si alguno de los dos archivos no llego al final debe seguir
+    v->vec = (void*)malloc(tamElem*cap);
+    if(!v->vec)
     {
-        if(i == *ce1) // Si llego al final el primero que inserte al segundo archivo
+        return false;
+    }
+    v->ce = 0;
+    v->cap = cap;
+    v->tamElem = tamElem;
+    return true;
+}
+
+void DestruirVector(Vector *v) // libero la memoria del tipo de dato Vector
+{
+    free(v->vec);
+}
+
+bool Redimensionar(Vector *v, size_t ncap) // Redimensiono el vector de v, segun sea necesario
+{
+    void *nvec;
+    nvec = realloc(v->vec, v->tamElem*ncap);
+    if(!nvec)
+        return false;
+    v->vec = nvec;
+    v->cap = ncap;
+    return true;
+}
+
+bool vecInsElemFinal(Vector *v, void *elem) // Inserto en tipo de dato vector un elemento al final
+{
+    if(v->ce == v->cap)
+    {
+        if(!Redimensionar(v, v->cap*INCREMENTO))
+            return TODO_MAL;
+    }
+    void * posIns = v->vec + v->ce*v->tamElem;
+    memcpy(posIns,elem,v->tamElem);
+    v->ce++;
+    return TODO_OK;
+}
+
+bool FusionarVectores(Vector *v1, Vector *v2, Vector *vFusion, Cmp cmp)
+{
+    int i = 0, j = 0; // Establezco los limites de ambos vectores
+    while(v1->ce > i || v2->ce > j) //Si alguno de los dos vectores no llegó a su fin
+    {
+        if(i == v1->ce) // Si llego al final el primero que inserte elementos del segundo vector
         {
-            InsertarAlFinal(Fusion,Obras,ce3); // Inserta al final del struct final
-            Obras++; // Incremento el archivo que inserte
-            j++; // Incremento el contador del archivo que inserte
+            if(vecInsElemFinal(vFusion,v2->vec)) // Inserta al final del vector Fusion
+                {
+                    v2->vec+=v2->tamElem;// Incremento el archivo que inserte
+                    j++;
+                }
+            else
+                return TODO_MAL;
         }
-        else if(j == *ce2)// Si llego al final el segundo que inserte al primer archivo
+        else if(j == v2->ce)// Si llego al final el segundo que inserte elementos del primer vector
         {
-            InsertarAlFinal(Fusion,ICC,ce3);
-            ICC++;
-            i++;
-        }
-        else{
-            if(CompararArch(ICC,Obras) < 0) // si ambos tienen registros disponibles, que ingrese al menor
+            if(vecInsElemFinal(vFusion,v1->vec))
             {
-                InsertarAlFinal(Fusion,ICC,ce3);
-                ICC++;
+                v1->vec+=v1->tamElem;
                 i++;
             }
             else
+                return TODO_MAL;
+        }
+        else{
+            if(cmp(v1->vec,v2->vec) < 0) // si ambos tienen elementos disponibles, que ingrese al menor
             {
-                InsertarAlFinal(Fusion,Obras,ce3);
-                Obras++;
-                j++;
+                if(vecInsElemFinal(vFusion,v2->vec)) // Inserta al final del vector Fusion
+                {
+                    v2->vec+=v2->tamElem;// Incremento el archivo que inserte
+                    j++;
+                }
+                else
+                    return TODO_MAL;
+            }
+            else
+            {
+                if(vecInsElemFinal(vFusion,v1->vec))
+                {
+                    v1->vec+=v1->tamElem;
+                    i++;
+                }
+                else
+                    return TODO_MAL;
             }
         }
     }
+    return TODO_OK;
 }
 
-void InsertarAlFinal(Archivo* a1, Archivo * a2, int *ce1) // Funcion para insertar un registro al final del vector
+void VectorMostrar(Vector *v, Accion accion)
 {
-    /*if(*ce1 == CAP)
-    {
-        //Crear funcion de realloc
-    }*/
-    a1 += *ce1;
-    mi_strcpy(a1->Clasificador, a2->Clasificador);
-    mi_strcpy(a1->fecha, a2->fecha);
-    a1->Indice = a2->Indice;
-    mi_strcpy(a1->Nivel, a2->Nivel);
-    *ce1 = *ce1 +1;
+   void *i,* ult = v->vec + (v->ce-1)*v->tamElem;
+
+   for(i = v->vec; i <= ult; i+=v->tamElem)
+   {
+       accion(i);
+   }
 }
 
-int CompararArch(Archivo *ICC,Archivo *Obras) // Compara ambos archivos, en este caso es solo una condicion, pero pueden ser mas
-{
-    return mi_strcmp(ICC->fecha, Obras->fecha);
-}
 
-void MostrarArch(Archivo *arch,int *ce) // Muestra al struct Archivo cuantos registros tenga
-{
-    int i;
-    for(i = 0; i<*ce; i++)
-    {
-        printf("Fecha: %s \tNivel: %s \tIndice: %f \tClasificador: %s\n", arch->fecha, arch->Nivel, arch->Indice, arch->Clasificador);
-        arch++;
-    }
-}
