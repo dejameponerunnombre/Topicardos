@@ -9,12 +9,24 @@
 #define SIN_MEM 2
 #define TODO_OK 1
 #define INCREMENTO 2
+#define CAP 5
+#define INDICE 10
+#define OBRAS 11
 
 typedef struct{
 int d;
 int m;
 int a;
 }Fecha;
+
+typedef struct{
+Fecha fecha;
+char Nivel[30];
+double Indice;
+char Clasificador[14];
+float varM;
+float varI;
+}Fusion;
 
 typedef struct{
 Fecha fecha;
@@ -31,7 +43,11 @@ size_t tamElem;
 }Vector;
 
 typedef int (*Cmp)(void*, void*);
+int ComparaFechaYClasiArchivo(void*v1, void*v2);
+
 typedef void (*Accion)(void*);
+void MostrarArchivo(void *arch);
+void MostrarFusion(void *arch);
 
 
 //TDA Vector
@@ -63,4 +79,7 @@ int mi_strcmp(const char *,  const char *); // Compara dos string y devuelve 0 s
 char *mi_strcpy(char *s1, const char *s2); // COPIA EN S1 LA CADENA DE S2
 char *mi_strchr(char *s, char *c); // ENCUENTRA LA POSICION DEL CHAR C EN LA CADENA S Y DEVUELVE SU POSICION, O NULL SI NO ENCONTRO
 int mi_atoi(const char *c); // CONVIERTE UN STRING EN ENTERO
+int mi_strlen(const char *c);
+void NormalizarLinea(Archivo *,char*, int);
+void ElimComillas(char*);
 #endif // TP_H_INCLUDED

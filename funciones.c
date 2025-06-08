@@ -12,10 +12,21 @@ void ReemplazoDeCaracter(char* strg, char charToFind, char charToReplace)
     }
 }
 
+int mi_strlen(const char *c)
+{
+    int sum = 0;
+    while(*c != '\0')
+    {
+        sum++;
+        c++;
+    }
+    return sum;
+}
+
 double mi_atod(const char *c)
 {
-    double num = 0;
-    int signo = 1, i = 10;
+    double num = 0, signo = 1;
+    int i = 10;
     if(*c == '-') // Si es negativo lo multiplica al final de la funcion
     {
         signo  = -1;
@@ -69,7 +80,7 @@ int mi_strcmp(const char *s1,  const char *s2)
 
 char *mi_strcpy(char *s1, const char *s2) //cadenas igual tamaño
 {
-    char *aux=s1;
+    char * aux = s1;
     while(*s2)
     {
         *s1=*s2;
@@ -94,13 +105,59 @@ char *mi_strchr(char *s, char *c)
 
 void FormatoFecha (char* fechaV, Fecha *fechaN)// PUNTO 1 CAMBIAR FORMATO FECHA
 {
-    sscanf(fechaV,"%d/%d/%d", &fechaN->d, &fechaN->m, &fechaN->a); // Descompongo el string original
+    sscanf(fechaV,"%d/%d/%d", &fechaN->d, &fechaN->m, &fechaN->a);
+
+     // Descompongo el string original
+}
+
+int ComparaFechaYClasiArchivo(void*v1, void*v2)
+{
+    if(((Archivo*)v1)->fecha.a == ((Archivo*)v2)->fecha.a && ((Archivo*)v1)->fecha.m == ((Archivo*)v2)->fecha.m &&((Archivo*)v1)->fecha.d == ((Archivo*)v2)->fecha.d) // si coinciden en mes y anio pero v1 es mas nuevo por dias
+    {
+        if(!mi_strcmp(((Archivo*)v2)->Clasificador,"Items"))
+            return 1;
+        else
+            return -1;
+    }
+    if(((Archivo*)v1)->fecha.a > ((Archivo*)v2)->fecha.a)
+        return -1;
+    else if(((Archivo*)v1)->fecha.a < ((Archivo*)v2)->fecha.a)
+        return 1;
+    else if((((Archivo*)v1)->fecha.a == ((Archivo*)v2)->fecha.a) && (((Archivo*)v1)->fecha.m > ((Archivo*)v2)->fecha.m))
+        return -1;
+    else if((((Archivo*)v1)->fecha.a == ((Archivo*)v2)->fecha.a) && (((Archivo*)v1)->fecha.m < ((Archivo*)v2)->fecha.m))
+        return 1;
+    else if(((Archivo*)v1)->fecha.a == ((Archivo*)v2)->fecha.a && ((Archivo*)v1)->fecha.m == ((Archivo*)v2)->fecha.m &&((Archivo*)v1)->fecha.d > ((Archivo*)v2)->fecha.d) // si coinciden en mes y anio pero v1 es mas nuevo por dias
+        return -1;
+
+    return 1;
+
+}
+
+void MostrarArchivo(void *arch)
+{
+    printf("Fecha: %.4d-%.2d-%.2d\tNivel: %s\tIndice: %f\tClasificador: %s\n", ((Archivo*)arch)->fecha.a,
+           ((Archivo*)arch)->fecha.m,((Archivo*)arch)->fecha.d,
+           ((Archivo*)arch)->Nivel,((Archivo*)arch)->Indice,
+           ((Archivo*)arch)->Clasificador);
+}
+
+void MostrarFusion(void *arch)
+{
+    printf("Fecha: %.4d-%.2d-%.2d\tNivel: %s\tIndice: %f\tClasificador: %s\tVar. Mensual: %f\tVar. Interanual: %f\n", ((Fusion*)arch)->fecha.a,
+           ((Fusion*)arch)->fecha.m,((Fusion*)arch)->fecha.d,
+           ((Fusion*)arch)->Nivel,((Fusion*)arch)->Indice,
+           ((Fusion*)arch)->Clasificador, ((Fusion*)arch)->varM, ((Fusion*)arch)->varI);
 }
 
 double CambioFormatoIndice(char * indice)
 {
-    ReemplazoDeCaracter(indice, ',','.'); // Busco en indice todos las "," y las reemplazo por "."
-    return mi_atod(indice); // retorna el indice como double
+    char busc = ',';
+    double num;
+    if(mi_strchr(indice, &busc))
+        ReemplazoDeCaracter(indice, ',','.'); // Busco en indice todos las "," y las reemplazo por "."
+    num = mi_atod(indice);
+    return num; // retorna el indice como double
 }
 
 void desencriptadoNivelGralAperturasICC(char *texto)
@@ -285,4 +342,63 @@ void VectorMostrar(Vector *v, Accion accion)
    }
 }
 
+void ElimComillas(char*linea)
+{
+    char *aux;
+    while(*linea)
+    {
+        if(*linea == '"')
+        {
+            aux = linea;
+            while(*aux)
+            {
+                *aux = *(aux+1);
+                aux++;
+            }
+        }
+        linea++;
+    }
+}
 
+void NormalizarLinea(Archivo *lec,char *linea, int val)
+{
+    int cont = 0;
+    ElimComillas(linea);
+    char *fin = linea + mi_strlen(linea)-1;
+    *fin= '\0';
+    while(fin >= linea)
+    {
+        if(*fin == ';' || fin == linea)
+        {
+            if(cont == 0)
+            {
+                lec->Indice = CambioFormatoIndice(fin+1);
+            }
+            else if(cont == 1)
+            {
+                if(val == INDICE)
+                {
+                    desencriptadoNivelGralAperturasICC(fin+1);
+                    normalizarNivelGral(fin+1);
+                }
+                else if(val == OBRAS)
+                {
+                    desencriptadoNivelGralAperturasObras(fin+1);
+                    normalizarObras(fin+1);
+                }
+                mi_strcpy(lec->Nivel,fin+1);
+            }
+            else
+            {
+                FormatoFecha(fin,&lec->fecha);
+            }
+            *fin = '\0';
+            cont++;
+        }
+        fin --;
+    }
+    if(val == INDICE)
+        Clasificador(lec->Nivel, lec->Clasificador);
+    else if(val == OBRAS)
+        mi_strcpy(lec->Clasificador, "Items");
+}
