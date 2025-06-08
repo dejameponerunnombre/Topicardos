@@ -136,18 +136,10 @@ int ComparaFechaYClasiArchivo(void*v1, void*v2)
 
 void MostrarArchivo(void *arch)
 {
-    printf("Fecha: %.4d-%.2d-%.2d\tNivel: %s\tIndice: %f\tClasificador: %s\n", ((Archivo*)arch)->fecha.a,
+    printf("Fecha: %.4d-%.2d-%.2d\tNivel: %s\tIndice: %f\tClasificador: %s\tVar. Mensual: %f\tVar Interanual: %f\n", ((Archivo*)arch)->fecha.a,
            ((Archivo*)arch)->fecha.m,((Archivo*)arch)->fecha.d,
            ((Archivo*)arch)->Nivel,((Archivo*)arch)->Indice,
-           ((Archivo*)arch)->Clasificador);
-}
-
-void MostrarFusion(void *arch)
-{
-    printf("Fecha: %.4d-%.2d-%.2d\tNivel: %s\tIndice: %f\tClasificador: %s\tVar. Mensual: %f\tVar. Interanual: %f\n", ((Fusion*)arch)->fecha.a,
-           ((Fusion*)arch)->fecha.m,((Fusion*)arch)->fecha.d,
-           ((Fusion*)arch)->Nivel,((Fusion*)arch)->Indice,
-           ((Fusion*)arch)->Clasificador, ((Fusion*)arch)->varM, ((Fusion*)arch)->varI);
+           ((Archivo*)arch)->Clasificador, ((Archivo*)arch)->varM,((Archivo*)arch)->varI);
 }
 
 double CambioFormatoIndice(char * indice)
@@ -335,7 +327,6 @@ bool FusionarVectores(Vector *v1, Vector *v2, Vector *vFusion, Cmp cmp)
 void VectorMostrar(Vector *v, Accion accion)
 {
    void *i,* ult = v->vec + (v->ce-1)*v->tamElem;
-
    for(i = v->vec; i <= ult; i+=v->tamElem)
    {
        accion(i);
@@ -402,3 +393,74 @@ void NormalizarLinea(Archivo *lec,char *linea, int val)
     else if(val == OBRAS)
         mi_strcpy(lec->Clasificador, "Items");
 }
+
+float buscarIndiceM(Fecha* f, char *nivel, void *v)
+{
+    while(mi_strcmp(nivel, ((Archivo*)v)->Nivel) || f->a != ((Archivo*)v)->fecha.a || f->m != ((Archivo*)v)->fecha.m)
+    {
+        if(f->m == 1 && f->a == ((Archivo*)v)->fecha.a + 1 && ((Archivo*)v)->fecha.m == 12 && !mi_strcmp(nivel, ((Archivo*)v)->Nivel))
+        {
+            return ((Archivo*)v)->Indice;
+        }
+        else if(f->a == ((Archivo*)v)->fecha.a && f->m == ((Archivo*)v)->fecha.m + 1 && !mi_strcmp(nivel, ((Archivo*)v)->Nivel))
+        {
+            return ((Archivo*)v)->Indice;
+        }
+        v += sizeof(Archivo);
+    }
+    return 0;
+}
+
+float buscarIndiceI(Fecha* f, char *nivel, void *v)
+{
+    while(mi_strcmp(nivel, ((Archivo*)v)->Nivel) || f->a != ((Archivo*)v)->fecha.a || f->m != ((Archivo*)v)->fecha.m)
+    {
+        if(f->a == ((Archivo*)v)->fecha.a + 1 && !mi_strcmp(nivel, ((Archivo*)v)->Nivel))
+        {
+            return ((Archivo*)v)->Indice;
+        }
+        v += sizeof(Archivo);
+    }
+    return 0;
+}
+
+void InsertarVarMensEInter(void*v, void*linea)
+{
+    Fecha f = ((Archivo*)linea)->fecha;
+    char nivel[40];
+    mi_strcpy(nivel, ((Archivo*)linea)->Nivel);
+    float valor;
+    valor = buscarIndiceM(&f, nivel, v);
+    if(valor)
+    {
+        valor = ((((Archivo*)linea)->Indice/valor) - 1)*100;
+    }
+    else
+    {
+        valor = 0;
+    }
+    ((Archivo*)linea)->varM = valor;
+    valor = buscarIndiceI(&f, nivel, v);
+    if(valor)
+    {
+        valor = ((((Archivo*)linea)->Indice/valor) - 1)*100;
+    }
+    else
+    {
+        valor = 0;
+    }
+    ((Archivo*)linea)->varI = valor;
+}
+
+void VectorModificar(Vector *v, Modificacion Modi)
+{
+    void * ult = v->vec+(v->tamElem*v->ce-1);
+    void *ini = v->vec;
+    void *actual = v->vec;
+    while(actual <= ult)
+    {
+        Modi(ini, actual);
+        actual += v->tamElem;
+    }
+}
+

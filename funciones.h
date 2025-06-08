@@ -1,12 +1,3 @@
-#ifndef TP_H_INCLUDED
-#define TP_H_INCLUDED
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-#define A_MAYUS(X) X >= 'a' && X <='z'? (X + 'A' - 'a') : X
-#define TODO_MAL 0
-#define SIN_MEM 2
 #define TODO_OK 1
 #define INCREMENTO 2
 #define CAP 5
@@ -21,18 +12,11 @@ int a;
 
 typedef struct{
 Fecha fecha;
-char Nivel[30];
+char Nivel[40];
 double Indice;
 char Clasificador[14];
 float varM;
 float varI;
-}Fusion;
-
-typedef struct{
-Fecha fecha;
-char Nivel[30];
-double Indice;
-char Clasificador[14];
 }Archivo;
 
 typedef struct{
@@ -49,6 +33,8 @@ typedef void (*Accion)(void*);
 void MostrarArchivo(void *arch);
 void MostrarFusion(void *arch);
 
+typedef void (*Modificacion)(void*, void*);
+void InsertarVarMensEInter(void*, void*);
 
 //TDA Vector
 
@@ -57,7 +43,7 @@ void DestruirVector(Vector *v);
 bool Redimensionar(Vector *v, size_t ncap);
 bool vecInsElemFinal(Vector *v, void *elem);
 void VectorMostrar(Vector *v, Accion accion);
-
+void VectorModificar(Vector *v, Modificacion Modi);
 
 
 //Ejercicios del Trabajo

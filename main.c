@@ -5,7 +5,7 @@ int main()
     FILE *ICC, *Obras;
     Archivo lectura;
     Vector vICC, vObras, vFusion;
-    char linea[60];
+    char linea[90];
 
     if(!CrearVector(&vICC, sizeof(Archivo), CAP))
     {
@@ -18,7 +18,7 @@ int main()
         DestruirVector(&vICC);
         return 1;
     }
-    if(!CrearVector(&vFusion,sizeof(Fusion), CAP))
+    if(!CrearVector(&vFusion,sizeof(Archivo), CAP))
     {
         printf("Falta de memoria");
         DestruirVector(&vICC);
@@ -63,10 +63,8 @@ int main()
         vecInsElemFinal(&vObras,(void*)(&lectura));
         fgets(linea,sizeof(linea),Obras);
     }
-
     FusionarVectores(&vICC,&vObras,&vFusion,ComparaFechaYClasiArchivo);
-    VectorMostrar(&vFusion, MostrarFusion);
-
-
+    VectorModificar(&vFusion, InsertarVarMensEInter);
+    VectorMostrar(&vFusion, MostrarArchivo);
     return 0;
 }
