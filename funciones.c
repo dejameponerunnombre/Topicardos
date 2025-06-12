@@ -157,9 +157,9 @@ void desencriptadoNivelGralAperturasICC(char *texto)
     int pos = 0, aum = 0;
     while(*texto)
     {
+        pos++;
         if(*texto <= 'z' && *texto >= 'a') // verifica que el char sea letra
         {
-            pos++; // la posicion de la letra en la palabra
             if(pos%2 == 0) // si es par
                 aum = 2;
             else // si es impar
@@ -169,8 +169,6 @@ void desencriptadoNivelGralAperturasICC(char *texto)
             else // si si termina el abecedario
                 *texto += 'a'-1 + aum - 'z';
         }
-        else
-            pos = 0; // reinicia el contador si el caracter no es letra, es decir, termino la palabra
         texto++;
     }
 }
