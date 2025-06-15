@@ -1,12 +1,11 @@
 #include "funciones.h"
-
 int main()
 {
-    FILE *ICC, *Obras;
+    FILE *ICC, *Obras, *Final;
     Archivo lectura;
     Vector vICC, vObras, vFusion;
     char linea[90];
-
+    //Creacion de vectores con concepto TDA Vector
     if(!CrearVector(&vICC, sizeof(Archivo), CAP))
     {
         printf("Falta de memoria");
@@ -25,7 +24,8 @@ int main()
         DestruirVector(&vObras);
         return 1;
     }
-    ICC = fopen("indices_icc_general_capitulos.csv", "rt");
+    //Apertura de archivos
+    ICC = fopen("indices_icc_general_capitulos.csv", "r");
     if(!ICC)
     {
         DestruirVector(&vICC);
@@ -34,7 +34,7 @@ int main()
         printf("Error al abrir el archivo");
         return 1;
     }
-    Obras = fopen("Indices_items_obra.csv", "rt");
+    Obras = fopen("Indices_items_obra.csv", "r");
     if(!Obras)
     {
         DestruirVector(&vICC);
@@ -44,27 +44,56 @@ int main()
         printf("Error al abrir el archivo");
         return 1;
     }
-
-    fgets(linea,sizeof(linea),ICC);
+    Final = fopen("Final.dat", "wb");
+    if(!Final)
+    {
+        DestruirVector(&vICC);
+        DestruirVector(&vObras);
+        DestruirVector(&vFusion);
+        fclose(ICC);
+        fclose(Obras);
+        printf("Error al abrir el archivo");
+        return 1;
+    }
+    //Carga de los vectores en base a los archivos dados
+    fgets(linea,sizeof(linea),ICC); //Primera linea de los nombres de las columnas
     fgets(linea,sizeof(linea),ICC);
     while(!feof(ICC))
     {
         NormalizarLinea(&lectura, linea, INDICE);
-        vecInsElemFinal(&vICC,(void*)(&lectura));
+        if(vecInsElemFinal(&vICC,(void*)(&lectura))  == TODO_MAL)
+        {
+            printf("Error cargando el vector");
+            return 1;
+        }
         fgets(linea,sizeof(linea),ICC);
     }
+    fclose(ICC); //Al no utilizarlo más lo cierro
 
-    fgets(linea,sizeof(linea),Obras);
+    fgets(linea,sizeof(linea),Obras); //Primera linea de los nombres de las columnas
     fgets(linea,sizeof(linea),Obras);
     while(!feof(Obras))
     {
 
         NormalizarLinea(&lectura, linea, OBRAS);
-        vecInsElemFinal(&vObras,(void*)(&lectura));
+        if(vecInsElemFinal(&vObras,(void*)(&lectura))  == TODO_MAL)
+        {
+            printf("Error cargando el vector");
+            return 1;
+        }
         fgets(linea,sizeof(linea),Obras);
     }
-    FusionarVectores(&vICC,&vObras,&vFusion,ComparaFechaYClasiArchivo);
-    VectorModificar(&vFusion, InsertarVarMensEInter);
-    VectorMostrar(&vFusion, MostrarArchivo);
+    fclose(Obras); //Al no utilizarlo más lo cierro
+
+    if(FusionarVectores(&vICC,&vObras,&vFusion,ComparaFechaYClasiArchivo) == TODO_MAL) //Fusion de ambos vectores en uno ordenado
+    {
+        printf("Error al fusionar los archivos");
+        return 1;
+    }
+    VectorModificar(&vFusion, InsertarVarMensEInter); // Intentando mantener lo generico en todas las funciones de TDA Vector, agrega Var. Mensual e Interanual
+    VectorCrearArchivo(&vFusion,Final,CargarBinario); // Intentando mantener lo generico en todas las funciones de TDA Vector, carga del archivo binario final
+    fclose(Final);
+    //VectorMostrar(&vFusion,MostrarArchivo); // Muestra la fusion de ambos archivos de texto
+    MostrarBinario(); // Muestra el archivo binario final
     return 0;
 }

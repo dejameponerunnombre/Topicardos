@@ -91,14 +91,27 @@ char *mi_strcpy(char *s1, const char *s2) //cadenas igual tamaño
     return aux;
 }
 
-char *mi_strchr(char *s, char *c)
+char *mi_strchr(char *s, char c)
 {
     char *aux = NULL;
     while (*s && aux == NULL)
     {
-        if(*s == *c)
+        if(*s == c)
             aux = s;
         s++;
+    }
+    return aux;
+}
+
+char *mi_strrchr(char*s, char c)
+{
+    char *aux = NULL;
+    char *act = s + mi_strlen(s);
+    while(act != s && aux == NULL)
+    {
+        if(*act == c)
+            aux = act;
+        act--;
     }
     return aux;
 }
@@ -106,7 +119,6 @@ char *mi_strchr(char *s, char *c)
 void FormatoFecha (char* fechaV, Fecha *fechaN)// PUNTO 1 CAMBIAR FORMATO FECHA
 {
     sscanf(fechaV,"%d/%d/%d", &fechaN->d, &fechaN->m, &fechaN->a);
-
      // Descompongo el string original
 }
 
@@ -136,7 +148,7 @@ int ComparaFechaYClasiArchivo(void*v1, void*v2)
 
 void MostrarArchivo(void *arch)
 {
-    printf("Fecha: %.4d-%.2d-%.2d\tNivel: %s\tIndice: %f\tClasificador: %s\tVar. Mensual: %f\tVar Interanual: %f\n", ((Archivo*)arch)->fecha.a,
+    printf("Fecha: %.4d-%.2d-%.2d\tNivel: %-40s\tIndice: %f\tClasificador: %-15s\tVar. Mensual: %.2f\tVar Interanual: %.2f\n", ((Archivo*)arch)->fecha.a,
            ((Archivo*)arch)->fecha.m,((Archivo*)arch)->fecha.d,
            ((Archivo*)arch)->Nivel,((Archivo*)arch)->Indice,
            ((Archivo*)arch)->Clasificador, ((Archivo*)arch)->varM,((Archivo*)arch)->varI);
@@ -146,7 +158,7 @@ double CambioFormatoIndice(char * indice)
 {
     char busc = ',';
     double num;
-    if(mi_strchr(indice, &busc))
+    if(mi_strchr(indice, busc))
         ReemplazoDeCaracter(indice, ',','.'); // Busco en indice todos las "," y las reemplazo por "."
     num = mi_atod(indice);
     return num; // retorna el indice como double
@@ -199,7 +211,7 @@ void desencriptadoNivelGralAperturasObras(char*texto)
     int pos;
     while(*texto)
     {
-        car = mi_strchr(codigo1,texto); // Busco si la letra del texto a la que apunto se encuentra en el primer codigo
+        car = mi_strchr(codigo1,*texto); // Busco si la letra del texto a la que apunto se encuentra en el primer codigo
         if(car) // Pregunto si encontro algo
         {
             pos = (car-codigo1)/sizeof(codigo1[0]); // Copio la posicion del vector en la que se encuentra el caracter encontrado
@@ -252,7 +264,11 @@ bool Redimensionar(Vector *v, size_t ncap) // Redimensiono el vector de v, segun
     void *nvec;
     nvec = realloc(v->vec, v->tamElem*ncap);
     if(!nvec)
+    {
+        printf("Error al redimensionar vector");
         return false;
+    }
+
     v->vec = nvec;
     v->cap = ncap;
     return true;
@@ -278,7 +294,7 @@ bool FusionarVectores(Vector *v1, Vector *v2, Vector *vFusion, Cmp cmp)
     {
         if(i == v1->ce) // Si llego al final el primero que inserte elementos del segundo vector
         {
-            if(vecInsElemFinal(vFusion,v2->vec)) // Inserta al final del vector Fusion
+            if(vecInsElemFinal(vFusion,v2->vec) != TODO_MAL) // Inserta al final del vector Fusion
                 {
                     v2->vec+=v2->tamElem;// Incremento el archivo que inserte
                     j++;
@@ -288,7 +304,7 @@ bool FusionarVectores(Vector *v1, Vector *v2, Vector *vFusion, Cmp cmp)
         }
         else if(j == v2->ce)// Si llego al final el segundo que inserte elementos del primer vector
         {
-            if(vecInsElemFinal(vFusion,v1->vec))
+            if(vecInsElemFinal(vFusion,v1->vec) != TODO_MAL)
             {
                 v1->vec+=v1->tamElem;
                 i++;
@@ -299,7 +315,7 @@ bool FusionarVectores(Vector *v1, Vector *v2, Vector *vFusion, Cmp cmp)
         else{
             if(cmp(v1->vec,v2->vec) < 0) // si ambos tienen elementos disponibles, que ingrese al menor
             {
-                if(vecInsElemFinal(vFusion,v2->vec)) // Inserta al final del vector Fusion
+                if(vecInsElemFinal(vFusion,v2->vec) != TODO_MAL) // Inserta al final del vector Fusion
                 {
                     v2->vec+=v2->tamElem;// Incremento el archivo que inserte
                     j++;
@@ -309,7 +325,7 @@ bool FusionarVectores(Vector *v1, Vector *v2, Vector *vFusion, Cmp cmp)
             }
             else
             {
-                if(vecInsElemFinal(vFusion,v1->vec))
+                if(vecInsElemFinal(vFusion,v1->vec) != TODO_MAL)
                 {
                     v1->vec+=v1->tamElem;
                     i++;
@@ -351,41 +367,26 @@ void ElimComillas(char*linea)
 
 void NormalizarLinea(Archivo *lec,char *linea, int val)
 {
-    int cont = 0;
     ElimComillas(linea);
     char *fin = linea + mi_strlen(linea)-1;
     *fin= '\0';
-    while(fin >= linea)
+    fin = mi_strrchr(linea, ';');
+    lec->Indice = CambioFormatoIndice(fin+1);
+    *fin= '\0';
+    fin = mi_strrchr(linea, ';');
+    if(val == INDICE)
     {
-        if(*fin == ';' || fin == linea)
-        {
-            if(cont == 0)
-            {
-                lec->Indice = CambioFormatoIndice(fin+1);
-            }
-            else if(cont == 1)
-            {
-                if(val == INDICE)
-                {
-                    desencriptadoNivelGralAperturasICC(fin+1);
-                    normalizarNivelGral(fin+1);
-                }
-                else if(val == OBRAS)
-                {
-                    desencriptadoNivelGralAperturasObras(fin+1);
-                    normalizarObras(fin+1);
-                }
-                mi_strcpy(lec->Nivel,fin+1);
-            }
-            else
-            {
-                FormatoFecha(fin,&lec->fecha);
-            }
-            *fin = '\0';
-            cont++;
-        }
-        fin --;
+        desencriptadoNivelGralAperturasICC(fin+1);
+        normalizarNivelGral(fin+1);
     }
+    else if(val == OBRAS)
+    {
+        desencriptadoNivelGralAperturasObras(fin+1);
+        normalizarObras(fin+1);
+    }
+    mi_strcpy(lec->Nivel,fin+1);
+    *fin = '\0';
+    FormatoFecha(linea,&lec->fecha);
     if(val == INDICE)
         Clasificador(lec->Nivel, lec->Clasificador);
     else if(val == OBRAS)
@@ -432,6 +433,9 @@ void InsertarVarMensEInter(void*v, void*linea)
     if(valor)
     {
         valor = ((((Archivo*)linea)->Indice/valor) - 1)*100;
+        valor*=100;
+        valor = round(valor);
+        valor= valor/100;
     }
     else
     {
@@ -442,6 +446,9 @@ void InsertarVarMensEInter(void*v, void*linea)
     if(valor)
     {
         valor = ((((Archivo*)linea)->Indice/valor) - 1)*100;
+        valor*=100;
+        valor = round(valor);
+        valor= valor/100;
     }
     else
     {
@@ -461,4 +468,52 @@ void VectorModificar(Vector *v, Modificacion Modi)
         actual += v->tamElem;
     }
 }
+
+void CargarBinario(void* origen, FILE* arch)
+{
+    Archivo original = *(Archivo*)origen;
+    Binario escritura;
+
+    mi_strcpy(escritura.Clasificador,original.Clasificador);
+    mi_strcpy(escritura.Nivel,original.Nivel);
+    escritura.periodo.a = original.fecha.a;
+    escritura.periodo.m = original.fecha.m;
+    escritura.periodo.d = original.fecha.d;
+    mi_strcpy(escritura.Variable, "indice_icc");
+    escritura.valor = original.Indice;
+    fwrite(&escritura, sizeof(Binario),1, arch);
+    mi_strcpy(escritura.Variable, "var_mensual");
+    escritura.valor = original.varM;
+    fwrite(&escritura, sizeof(Binario),1, arch);
+    mi_strcpy(escritura.Variable, "var_internual");
+    escritura.valor = original.varI;
+    fwrite(&escritura, sizeof(Binario),1, arch);
+}
+
+void VectorCrearArchivo(Vector *v, FILE *f, Cargar func)
+{
+    void * ult = v->vec+(v->tamElem*v->ce-1);
+    void *actual = v->vec;
+    while(actual <= ult)
+    {
+        func(actual, f);
+        actual += v->tamElem;
+    }
+}
+
+void MostrarBinario()
+{
+    FILE* Final;
+    Final = fopen("Final.dat", "rb");
+    Binario lec;
+    printf("Periodo\t\tClasificador\t\tnivel_general_aperturas\t\t\tTipo_Variable\tValor\n");
+    fread(&lec, sizeof(Binario), 1, Final);
+    while(!feof(Final))
+    {
+        printf("%04d-%02d-%02d\t%-15s\t%-40s\t%-15s\t%.2f\n",lec.periodo.a, lec.periodo.m, lec.periodo.d, lec.Clasificador, lec.Nivel, lec.Variable, lec.valor);
+        fread(&lec, sizeof(Binario), 1, Final);
+    }
+    fclose(Final);
+}
+
 
